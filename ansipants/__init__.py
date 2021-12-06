@@ -217,7 +217,7 @@ class ANSIDecoder:
             if not params:
                 self.set_cursor(x=0, y=0)
             elif len(params) == 2:
-                self.set_cursor(x=params[1], y=params[0])
+                self.set_cursor(x=params[1] - 1, y=params[0] - 1)
             elif self.strict:
                 raise ANSIDecodeError("Expected 0 or 2 param to '%s' escape sequence, got %d" % (code, len(params)))
 
