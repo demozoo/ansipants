@@ -23,6 +23,8 @@ class ANSIDecoder:
         self.buffer = [self.current_line]
         self.x = 0
         self.y = 0
+        self.saved_x = 0
+        self.saved_y = 0
         self.current_attr = DEFAULT_ATTR
         self.width = width
         self.strict = strict
@@ -206,6 +208,19 @@ class ANSIDecoder:
                 pass
             elif self.strict:
                 raise ANSIDecodeError("Unrecognised params to 'h' - got %r" % params)
+
+        elif code == 's':
+            # save cursor position
+            if params and self.strict:
+                raise ANSIDecodeError("Unrecognised params to 's' - got %r" % params)
+            self.saved_x = self.x
+            self.saved_y = self.y
+
+        elif code == 'u':
+            # restore cursor position
+            if params and self.strict:
+                raise ANSIDecodeError("Unrecognised params to 'u' - got %r" % params)
+            self.set_cursor(x=self.saved_x, y=self.saved_y)
 
         else:
             if self.strict:
