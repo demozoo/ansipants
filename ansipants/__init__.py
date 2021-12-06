@@ -8,6 +8,25 @@ COLORS = {
     False: ['000', 'a00', '0a0', 'a50', '00a', 'a0a', '0aa', 'aaa'],
     True: ['555', 'f55', '5f5', 'ff5', '55f', 'f5f', '5ff', 'fff'],
 }
+
+# Low ASCII codes that correspond to printable characters in CP437.
+# Python apparently doesn't remap these to the relevant Unicode points
+# when decoding cp437, so we have to do it ourselves...
+REMAPPED_CHARS = {
+    '\x00': ' ',
+    '\x01': '\u263a',
+    '\x02': '\u263b',
+    '\x03': '\u2665',
+    '\x04': '\u2666',
+    '\x05': '\u2663',
+    '\x06': '\u2660',
+    '\x10': '\u25ba',
+    '\x11': '\u25c4',
+    '\x1d': '\u2194',
+    '\x1e': '\u25b2',
+    '\x1f': '\u25bc',
+}
+
 DEFAULT_FG = 7
 DEFAULT_BG = 0
 DEFAULT_ATTR = Attribute(fg=DEFAULT_FG, bg=DEFAULT_BG, bright=False)
@@ -237,11 +256,14 @@ class ANSIDecoder:
             elif char >= ' ':
                 self.write_char(char)
 
-            elif char == '\0':
-                self.write_char(' ')
-
-            elif char == '\n':
+            elif char == '\x0a':  # LF
                 self.write_newline()
+
+            elif char == '\x0d':  # CR
+                continue
+
+            elif char in REMAPPED_CHARS:
+                self.write_char(REMAPPED_CHARS[char])
 
             elif char == '\x1a':
                 # EOF when using SAUCE records
