@@ -5,8 +5,8 @@ from html import escape
 Attribute = namedtuple('Attribute', ['fg', 'bg', 'bright'])
 
 COLORS = {
-    False: ['000', 'c00', '0c0', 'cc0', '00c', 'c0c', '0cc', 'ccc'],
-    True: ['000', 'f00', '0f0', 'ff0', '00f', 'f0f', '0ff', 'fff'],
+    False: ['000', 'a00', '0a0', 'a50', '00a', 'a0a', '0aa', 'aaa'],
+    True: ['555', 'f55', '5f5', 'ff5', '55f', 'f5f', '5ff', 'fff'],
 }
 DEFAULT_FG = 7
 DEFAULT_BG = 0
@@ -296,7 +296,7 @@ class ANSIDecoder:
                 if attr.bg == DEFAULT_BG:
                     style = 'color: #%s;' % fg
                 else:
-                    bg = COLORS[attr.bright][attr.bg]
+                    bg = COLORS[False][attr.bg]
                     style = 'color: #%s; background-color: #%s;' % (fg, bg)
 
                 output_line += '<span style="%s">%s</span>' % (style, escape(text, quote=False))
