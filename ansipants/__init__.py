@@ -2,8 +2,6 @@ from collections import namedtuple
 from html import escape
 
 
-Attribute = namedtuple('Attribute', ['fg', 'bg', 'bright', 'underline'])
-
 COLORS = {
     False: ['000', 'a00', '0a0', 'a50', '00a', 'a0a', '0aa', 'aaa'],
     True: ['555', 'f55', '5f5', 'ff5', '55f', 'f5f', '5ff', 'fff'],
@@ -29,6 +27,23 @@ REMAPPED_CHARS = {
 
 DEFAULT_FG = 7
 DEFAULT_BG = 0
+
+BaseAttribute = namedtuple('Attribute', ['fg', 'bg', 'bright', 'underline'])
+
+
+class Attribute(BaseAttribute):
+    @property
+    def css_style(self):
+        fg = COLORS[self.bright][self.fg]
+        styles = ['color: #%s;' % fg]
+        if self.bg != DEFAULT_BG:
+            bg = COLORS[False][self.bg]
+            styles.append('background-color: #%s;' % bg)
+        if self.underline:
+            styles.append('text-decoration: underline;')
+        return ' '.join(styles)
+
+
 DEFAULT_ATTR = Attribute(fg=DEFAULT_FG, bg=DEFAULT_BG, bright=False, underline=False)
 
 
@@ -334,16 +349,9 @@ class ANSIDecoder:
 
             output_line = ''
             for (attr, text) in spans:
-                fg = COLORS[attr.bright][attr.fg]
-                styles = ['color: #%s;' % fg]
-                if attr.bg != DEFAULT_BG:
-                    bg = COLORS[False][attr.bg]
-                    styles.append('background-color: #%s;' % bg)
-                if attr.underline:
-                    styles.append('text-decoration: underline;')
-                style = ' '.join(styles)
-
-                output_line += '<span style="%s">%s</span>' % (style, escape(text, quote=False))
+                output_line += (
+                    '<span style="%s">%s</span>' % (escape(attr.css_style), escape(text, quote=False))
+                )
             yield output_line
 
     def as_html(self):
