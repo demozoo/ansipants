@@ -4,6 +4,7 @@ Changelog
 0.1.2 (xxxx-xx-xx)
 ------------------
 
+* Implement escape sequence for underline
 * Ignore spaces in escape sequence arguments
 
 

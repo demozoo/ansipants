@@ -2,7 +2,7 @@ from collections import namedtuple
 from html import escape
 
 
-Attribute = namedtuple('Attribute', ['fg', 'bg', 'bright'])
+Attribute = namedtuple('Attribute', ['fg', 'bg', 'bright', 'underline'])
 
 COLORS = {
     False: ['000', 'a00', '0a0', 'a50', '00a', 'a0a', '0aa', 'aaa'],
@@ -29,7 +29,7 @@ REMAPPED_CHARS = {
 
 DEFAULT_FG = 7
 DEFAULT_BG = 0
-DEFAULT_ATTR = Attribute(fg=DEFAULT_FG, bg=DEFAULT_BG, bright=False)
+DEFAULT_ATTR = Attribute(fg=DEFAULT_FG, bg=DEFAULT_BG, bright=False, underline=False)
 
 
 class ANSIDecodeError(ValueError):
@@ -82,15 +82,17 @@ class ANSIDecoder:
         # Handle a line break
         self.set_cursor(x=0, y=(self.y + 1))
 
-    def set_attr(self, fg=None, bg=None, bright=None):
+    def set_attr(self, fg=None, bg=None, bright=None, underline=None):
         if fg is None:
             fg = self.current_attr.fg
         if bg is None:
             bg = self.current_attr.bg
         if bright is None:
             bright = self.current_attr.bright
+        if underline is None:
+            underline = self.current_attr.underline
 
-        self.current_attr = Attribute(fg=fg, bg=bg, bright=bright)
+        self.current_attr = Attribute(fg=fg, bg=bg, bright=bright, underline=underline)
 
     def write_escape(self, code, params):
         if code == 'm':
@@ -99,18 +101,19 @@ class ANSIDecoder:
                     self.current_attr = DEFAULT_ATTR
                 elif param == 1:
                     self.set_attr(bright=True)
-                elif param == 2:
+                elif param == 2 or param == 22:
                     self.set_attr(bright=False)
-                elif param in (3, 4, 5, 7, 8, 9):
-                    # italic / underline / blink etc - not supported
-                    pass
+                elif param == 4:
+                    self.set_attr(underline=True)
+                elif param == 24:
+                    self.set_attr(underline=False)
                 elif 30 <= param <= 37:
                     self.set_attr(fg=(param - 30))
                 elif 40 <= param <= 47:
                     self.set_attr(bg=(param - 40))
                 else:
                     if self.strict:
-                        raise ANSIDecodeError("Unrecognised parameter to 'm' escape sequence: %r" % param)
+                        raise ANSIDecodeError("Unsupported parameter to 'm' escape sequence: %r" % param)
         elif code == 'J':
             if params == [] or params == [0]:
                 # erase from cursor to end of screen
@@ -332,11 +335,13 @@ class ANSIDecoder:
             output_line = ''
             for (attr, text) in spans:
                 fg = COLORS[attr.bright][attr.fg]
-                if attr.bg == DEFAULT_BG:
-                    style = 'color: #%s;' % fg
-                else:
+                styles = ['color: #%s;' % fg]
+                if attr.bg != DEFAULT_BG:
                     bg = COLORS[False][attr.bg]
-                    style = 'color: #%s; background-color: #%s;' % (fg, bg)
+                    styles.append('background-color: #%s;' % bg)
+                if attr.underline:
+                    styles.append('text-decoration: underline;')
+                style = ' '.join(styles)
 
                 output_line += '<span style="%s">%s</span>' % (style, escape(text, quote=False))
             yield output_line
