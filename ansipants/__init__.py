@@ -295,6 +295,8 @@ class ANSIDecoder:
                         else:
                             params.append(param)
                             param = None
+                    elif char == ' ':
+                        pass
                     elif char == '?':
                         private = True
                     else:

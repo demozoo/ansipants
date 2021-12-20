@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.1.2 (xxxx-xx-xx)
+------------------
+
+* Ignore spaces in escape sequence arguments
+
+
 0.1.1 (2021-12-06)
 ------------------
 
