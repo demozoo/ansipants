@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.1.2 (xxxx-xx-xx)
+0.1.2 (2021-12-20)
 ------------------
 
 * Implement escape sequence for underline
