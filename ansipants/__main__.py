@@ -2,7 +2,7 @@
 
 import argparse
 
-from ansipants import ANSIDecoder
+from ansipants import ANSIDecoder, PALETTE_NAMES
 
 
 parser = argparse.ArgumentParser(description="Convert ANSI art to HTML.")
@@ -10,6 +10,10 @@ parser.add_argument('filename')
 parser.add_argument(
     '--encoding', default='cp437',
     help="Character encoding of input (default: cp437)"
+)
+parser.add_argument(
+    '--palette', default='vga', choices=PALETTE_NAMES,
+    help="Colour palette (default: vga)"
 )
 parser.add_argument(
     '--width', type=int, default=80,
@@ -22,6 +26,6 @@ parser.add_argument(
 args = parser.parse_args()
 
 with open(args.filename, 'rt', encoding=args.encoding) as f:
-    decoder = ANSIDecoder(f, width=args.width, strict=args.strict)
+    decoder = ANSIDecoder(f, palette=args.palette, width=args.width, strict=args.strict)
 
 print(decoder.as_html())

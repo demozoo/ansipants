@@ -2,10 +2,18 @@ from collections import namedtuple
 from html import escape
 
 
-COLORS = {
-    False: ['000', 'a00', '0a0', 'a50', '00a', 'a0a', '0aa', 'aaa'],
-    True: ['555', 'f55', '5f5', 'ff5', '55f', 'f5f', '5ff', 'fff'],
+PALETTES = {
+    'vga': {
+        False: ['000', 'a00', '0a0', 'a50', '00a', 'a0a', '0aa', 'aaa'],
+        True: ['555', 'f55', '5f5', 'ff5', '55f', 'f5f', '5ff', 'fff'],
+    },
+    'workbench': {
+        False: ['aaa', '000', 'fff', '68b', '00f', 'f0f', '0ff', 'fff'],
+        True: ['aaa', '000', 'fff', '68b', '00f', 'f0f', '0ff', 'fff'],
+    }
 }
+
+PALETTE_NAMES = PALETTES.keys()
 
 # Low ASCII codes that correspond to printable characters in CP437.
 # Python apparently doesn't remap these to the relevant Unicode points
@@ -28,20 +36,7 @@ REMAPPED_CHARS = {
 DEFAULT_FG = 7
 DEFAULT_BG = 0
 
-BaseAttribute = namedtuple('Attribute', ['fg', 'bg', 'bright', 'underline'])
-
-
-class Attribute(BaseAttribute):
-    @property
-    def css_style(self):
-        fg = COLORS[self.bright][self.fg]
-        styles = ['color: #%s;' % fg]
-        if self.bg != DEFAULT_BG:
-            bg = COLORS[False][self.bg]
-            styles.append('background-color: #%s;' % bg)
-        if self.underline:
-            styles.append('text-decoration: underline;')
-        return ' '.join(styles)
+Attribute = namedtuple('Attribute', ['fg', 'bg', 'bright', 'underline'])
 
 
 DEFAULT_ATTR = Attribute(fg=DEFAULT_FG, bg=DEFAULT_BG, bright=False, underline=False)
@@ -52,9 +47,10 @@ class ANSIDecodeError(ValueError):
 
 
 class ANSIDecoder:
-    def __init__(self, stream=None, width=80, strict=False):
+    def __init__(self, stream=None, palette='vga', width=80, strict=False):
         self.current_line = []
         self.buffer = [self.current_line]
+        self.palette = PALETTES[palette]
         self.x = 0
         self.y = 0
         self.saved_x = 0
@@ -328,6 +324,16 @@ class ANSIDecoder:
             elif self.strict:
                 raise ANSIDecodeError("Unrecognised character: %r" % char)
 
+    def css_style_for_attribute(self, attribute):
+        fg = self.palette[attribute.bright][attribute.fg]
+        styles = ['color: #%s;' % fg]
+        if attribute.bg != DEFAULT_BG:
+            bg = self.palette[False][attribute.bg]
+            styles.append('background-color: #%s;' % bg)
+        if attribute.underline:
+            styles.append('text-decoration: underline;')
+        return ' '.join(styles)
+
     def as_html_lines(self):
         for line in self.buffer:
             last_attr = None
@@ -350,10 +356,16 @@ class ANSIDecoder:
             output_line = ''
             for (attr, text) in spans:
                 output_line += (
-                    '<span style="%s">%s</span>' % (escape(attr.css_style), escape(text, quote=False))
+                    '<span style="%s">%s</span>' % (
+                        escape(self.css_style_for_attribute(attr)), escape(text, quote=False)
+                    )
                 )
             yield output_line
 
     def as_html(self):
         output_lines = list(self.as_html_lines())
-        return '\n'.join(output_lines)
+        return '<div style="color: #%s; background-color: #%s;">%s</div>' % (
+            self.palette[False][DEFAULT_FG],
+            self.palette[False][DEFAULT_BG],
+            '\n'.join(output_lines),
+        )
